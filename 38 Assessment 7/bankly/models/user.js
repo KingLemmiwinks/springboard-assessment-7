@@ -79,7 +79,7 @@ class User {
    *
    * */
 
-  static async getAll(username, password) {
+  static async getAll() { // BUG #3: Removed username and password from parameters
     const result = await db.query(
       `SELECT username,
                 first_name,

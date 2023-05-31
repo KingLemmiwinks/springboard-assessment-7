@@ -4,7 +4,7 @@ const { Client } = require("pg");
 
 let db = new Client({
   host: "localhost",
-  database: "jobly",
+  database: "bankly",
   password: "3Turtlz6!",
 });
 

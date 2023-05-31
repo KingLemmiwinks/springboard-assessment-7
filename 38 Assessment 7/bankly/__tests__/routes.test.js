@@ -28,7 +28,10 @@ beforeEach(async function () {
   ];
 
   for (let user of sampleUsers) {
-    await db.query(`INSERT INTO users VALUES ($1, $2, $3, $4, $5, $6, $7)`, user);
+    await db.query(
+      `INSERT INTO users VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      user
+    );
     tokens[user[0]] = createToken(user[0], user[6]);
   }
 });
@@ -90,9 +93,23 @@ describe("GET /users", function () {
   });
 
   test("should list all users", async function () {
-    const response = await request(app).get("/users").send({ _token: tokens.u1 });
+    const response = await request(app)
+      .get("/users")
+      .send({ _token: tokens.u1 });
     expect(response.statusCode).toBe(200);
     expect(response.body.users.length).toBe(3);
+  });
+
+  // TESTS BUG #4
+  test("should only include username, first_name, and last_name for users", async function () {
+    const response = await request(app)
+      .get("/users")
+      .send({ _token: tokens.u1 });
+    expect(response.body.users[0]).toEqual({
+      username: "u1",
+      first_name: "fn1",
+      last_name: "ln1",
+    });
   });
 });
 
@@ -103,7 +120,9 @@ describe("GET /users/[username]", function () {
   });
 
   test("should return data on u1", async function () {
-    const response = await request(app).get("/users/u1").send({ _token: tokens.u1 });
+    const response = await request(app)
+      .get("/users/u1")
+      .send({ _token: tokens.u1 });
     expect(response.statusCode).toBe(200);
     expect(response.body.user).toEqual({
       username: "u1",
@@ -121,13 +140,18 @@ describe("PATCH /users/[username]", function () {
     expect(response.statusCode).toBe(401);
   });
 
-  test("should deny access if not admin/right user", async function () {
-    const response = await request(app).patch("/users/u1").send({ _token: tokens.u2 }); // wrong user!
+  test("should deny access if not admin and not right user", async function () {
+    const response = await request(app)
+      .patch("/users/u1")
+      .send({ _token: tokens.u2 }); // wrong user!
     expect(response.statusCode).toBe(401);
   });
 
+  // TESTS BUG #2
   test("should patch data if admin", async function () {
-    const response = await request(app).patch("/users/u1").send({ _token: tokens.u3, first_name: "new-fn1" }); // u3 is admin
+    const response = await request(app)
+      .patch("/users/u1")
+      .send({ _token: tokens.u3, first_name: "new-fn1", admin: true }); // u3 is admin
     expect(response.statusCode).toBe(200);
     expect(response.body.user).toEqual({
       username: "u1",
@@ -135,14 +159,16 @@ describe("PATCH /users/[username]", function () {
       last_name: "ln1",
       email: "email1",
       phone: "phone1",
-      admin: false,
+      admin: true,
       password: expect.any(String),
     });
   });
 
-  // TESTS BUG #3
+  // TESTS BUG #1
   test("should patch data if right user", async function () {
-    const response = await request(app).patch("/users/u1").send({ _token: tokens.u1, first_name: "new-fn1" }); // u1 is current user
+    const response = await request(app)
+      .patch("/users/u1")
+      .send({ _token: tokens.u1, first_name: "new-fn1" }); // u1 is current user
     expect(response.statusCode).toBe(200);
     expect(response.body.user).toEqual({
       username: "u1",
@@ -155,14 +181,17 @@ describe("PATCH /users/[username]", function () {
     });
   });
 
-  // TESTS BUG #4
-  test("should disallowing patching not-allowed-fields", async function () {
-    const response = await request(app).patch("/users/u1").send({ _token: tokens.u1, admin: true });
+  test("should disallow patching not-allowed-fields", async function () {
+    const response = await request(app)
+      .patch("/users/u1")
+      .send({ _token: tokens.u1, admin: true });
     expect(response.statusCode).toBe(401);
   });
 
   test("should return 404 if cannot find", async function () {
-    const response = await request(app).patch("/users/not-a-user").send({ _token: tokens.u3, first_name: "new-fn" }); // u3 is admin
+    const response = await request(app)
+      .patch("/users/not-a-user")
+      .send({ _token: tokens.u3, first_name: "new-fn" }); // u3 is admin
     expect(response.statusCode).toBe(404);
   });
 });
@@ -174,12 +203,16 @@ describe("DELETE /users/[username]", function () {
   });
 
   test("should deny access if not admin", async function () {
-    const response = await request(app).delete("/users/u1").send({ _token: tokens.u1 });
+    const response = await request(app)
+      .delete("/users/u1")
+      .send({ _token: tokens.u1 });
     expect(response.statusCode).toBe(401);
   });
 
   test("should allow if admin", async function () {
-    const response = await request(app).delete("/users/u1").send({ _token: tokens.u3 }); // u3 is admin
+    const response = await request(app)
+      .delete("/users/u1")
+      .send({ _token: tokens.u3 }); // u3 is admin
     expect(response.statusCode).toBe(200);
     expect(response.body).toEqual({ message: "deleted" });
   });
