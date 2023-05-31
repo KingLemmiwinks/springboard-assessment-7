@@ -18,6 +18,12 @@ const { authUser, requireLogin, requireAdmin } = require('../middleware/auth');
 router.get('/', authUser, requireLogin, async function(req, res, next) {
   try {
     let users = await User.getAll();
+    // BUG #4: Map over return data to exclude phone and email
+    users = users.map((user) => ({
+      username: user.username,
+      first_name: user.first_name,
+      last_name: user.last_name,
+    }));
     return res.json({ users });
   } catch (err) {
     return next(err);
@@ -60,17 +66,23 @@ router.get('/:username', authUser, requireLogin, async function(
  *
  * It user cannot be found, return a 404 err. If they try to change
  * other fields (including non-existent ones), an error should be raised.
- *
+ * 
  */
 
 router.patch('/:username', authUser, requireLogin, async function(
+  // FIXES BUG #1: Removed requireAdmin so users can also edit themselves
   req,
   res,
   next
 ) {
   try {
     if (!req.curr_admin && req.curr_username !== req.params.username) {
-      throw new ExpressError('Only  that user or admin can edit a user.', 401);
+      throw new ExpressError('Only that user or admin can edit a user.', 401);
+    }
+
+    // FIXES BUG #2: Add conditional to fix non-admins from changing their admin status
+    if (!req.curr_admin && req.body.admin) {
+      throw new ExpressError('Only an admin may set admin status for non-admins.', 401);
     }
 
     // get fields to change; remove token so we don't try to change it
