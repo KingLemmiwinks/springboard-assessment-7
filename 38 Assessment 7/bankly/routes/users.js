@@ -85,6 +85,11 @@ router.patch('/:username', authUser, requireLogin, async function(
       throw new ExpressError('Only an admin may set admin status for non-admins.', 401);
     }
 
+    // FIXES BUG #6: Add a conditional to throw an error if the user tries to update username or password
+    if (req.body.username || req.body.password) {
+      throw new ExpressError("Updating username or password not allowed.", 401);
+    }
+
     // get fields to change; remove token so we don't try to change it
     let fields = { ...req.body };
     delete fields._token;

@@ -15,3 +15,6 @@ It should only return username, first_name, last_name.
 BUG #5:
 authUser function in middleware only decodes the token.
 It should verify to ensure the token hasn't been tampered with.
+
+BUG #6: Patch route for updating a user allows username and password to be changed.
+It should not allow username to be changed
