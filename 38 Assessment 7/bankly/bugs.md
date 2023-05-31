@@ -1,0 +1,1 @@
+BUG #1: Users can't update their own information.
